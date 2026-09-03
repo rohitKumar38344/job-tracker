@@ -1,9 +1,15 @@
-import { Request, Response } from "express";
-import { createCompany as createCompanyRepository } from "./company.repository";
+import { NextFunction, Request, Response } from "express";
+import {
+  insertCompany,
+  findCompaniesByUserId,
+} from "./company.repository";
 import { createCompanySchema } from "./company.validation";
-import { isUniqueViolation } from "../../db/errors";
 
-export async function createCompany(req: Request, res: Response) {
+export async function createCompany(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const result = createCompanySchema.safeParse(req.body);
 
   if (!result.success) {
@@ -14,7 +20,7 @@ export async function createCompany(req: Request, res: Response) {
   }
 
   try {
-    const company = await createCompanyRepository({
+    const company = await insertCompany({
       userId: 1,
       companyName: result.data.companyName,
       industry: result.data.industry,
@@ -25,18 +31,22 @@ export async function createCompany(req: Request, res: Response) {
     });
 
     return res.status(201).json({
-      data: company
-    })
+      data: company,
+    });
   } catch (error) {
-    if(isUniqueViolation(error)){
-      return res.status(409).json({
-        message: "A company with this name already exists."
-      })
-    }
-    console.error("Failed to create company: ", error)
+    return next(error);
+  }
+}
 
-    return res.status(500).json({
-      message: "Failed to create company"
-    })
+export async function getCompanies(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const companies = await findCompaniesByUserId(1);
+    return res.status(200).json({ data: companies });
+  } catch (error) {
+    return next(error);
   }
 }

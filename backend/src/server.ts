@@ -2,6 +2,7 @@ import "dotenv/config"
 import express, { Request, Response } from "express";
 import { pool } from "./db";
 import companyRouter from "./modules/companies/company.routes"
+import { errorHandler } from "./middlewares/error-handler";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,7 +25,7 @@ app.get('/health', async(req: Request, res: Response) => {
 })
 
 app.use('/api/companies', companyRouter)
-
+app.use(errorHandler)
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
