@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { createCompany as createCompanyRepository } from "./company.repository";
 import { createCompanySchema } from "./company.validation";
+import { isUniqueViolation } from "../../db/errors";
 
 export async function createCompany(req: Request, res: Response) {
   const result = createCompanySchema.safeParse(req.body);
@@ -27,6 +28,11 @@ export async function createCompany(req: Request, res: Response) {
       data: company
     })
   } catch (error) {
+    if(isUniqueViolation(error)){
+      return res.status(409).json({
+        message: "A company with this name already exists."
+      })
+    }
     console.error("Failed to create company: ", error)
 
     return res.status(500).json({
