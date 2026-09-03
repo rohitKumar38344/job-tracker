@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022" /* Target modern ECMAScript features supported by Node.js */,
+    "module": "NodeNext" /* Standard module system for modern Node.js */,
+    "moduleResolution": "NodeNext" /* Mimics Node.js resolution for imports */,
+    "lib": ["ES2022"] /* Available language features */,
+
+    /* Build Artifacts */
+    "outDir": "./dist" /* Directs compiled JavaScript to this directory */,
+    "rootDir": "./src" /* Root directory of your TypeScript source files */,
+    "sourceMap": true /* Generates .map files for debugging compiled code */,
+    "removeComments": true /* Strips comments from production JavaScript files */,
+
+    /* Quality & Safety Checking */
+    "strict": true /* Enables all strict type-checking options */,
+    "noImplicitAny": true /* Error on expressions and declarations with an implied 'any' type */,
+    "strictNullChecks": true /* Takes null and undefined into account during type checks */,
+    "noUnusedLocals": true /* Error on unused local variables */,
+    "noUnusedParameters": true /* Error on unused function parameters */,
+    "noImplicitReturns": true /* Ensure all code paths in a function return a value */,
+
+    /* Interoperability & Tooling */
+    "esModuleInterop": true /* Emits additional JavaScript to ease importing CommonJS modules */,
+    "forceConsistentCasingInFileNames": true /* Prevents case-sensitivity issues across OS environments */,
+    "skipLibCheck": true /* Skip type-checking of all declaration (*.d.ts) files */,
+    "resolveJsonModule": true /* Permits importing .json files directly into your TS */,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"] /* Paths to compile */,
+  "exclude": [
+    "node_modules",
+    "dist"
+  ] /* Paths to completely ignore during compilation */
+}

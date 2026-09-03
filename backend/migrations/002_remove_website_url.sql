@@ -1,0 +1,1 @@
+ALTER TABLE companies DROP column website_url;

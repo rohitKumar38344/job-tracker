@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS users(
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
 
-  created_at TIMESTAMPZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPZ NOT NULL DEFAULT NOW(),
-)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- =========================================================
 -- COMPANIES
@@ -25,9 +25,10 @@ CREATE TABLE IF NOT EXISTS companies(
   company_size INT CHECK (company_size > 0),
   notes TEXT,
 
-  company_url TEXT,
-  created_at TIMESTAMPZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPZ NOT NULL DEFAULT NOW(),
+  website_url TEXT,
+  linkedin_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   CONSTRAINT fk_company_user
     FOREIGN KEY(user_id)
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS companies(
 
   CONSTRAINT uq_company_per_user
       UNIQUE (user_id, company_name)
-)
+);
 
 -- =========================================================
 -- JOBS
@@ -85,8 +86,8 @@ CREATE TABLE IF NOT EXISTS jobs(
       salary_max IS NULL
       OR salary_min IS NULL
       OR salary_max >= salary_min
-),
-)
+  )
+);
 
 -- =========================================================
 -- APPLICATIONS
@@ -100,14 +101,14 @@ CREATE TABLE IF NOT EXISTS applications (
      CHECK (
       current_status in (
           'APPLIED'
-          'SCREENING'
-          'INTERVIEW'
-          'OFFER'
-          'REJECTED'
-          'WITHDRAWN')),
+        , 'SCREENING'
+        , 'INTERVIEW'
+        , 'OFFER'
+        , 'REJECTED'
+        , 'WITHDRAWN')),
   resume_name VARCHAR(120),
-  cover_letter_used BOOLEAN NOT NULL DEFAULT FALSE
-  referral source VARCHAR(120),
+    cover_letter_used BOOLEAN NOT NULL DEFAULT FALSE,
+    referral_source VARCHAR(120),
   notes TEXT,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -116,7 +117,7 @@ CREATE TABLE IF NOT EXISTS applications (
       FOREIGN KEY(job_id)
       REFERENCES jobs(job_id)
       ON DELETE CASCADE
-)
+    );
 
 -- =========================================================
 -- APPLICATION HISTORY
@@ -134,13 +135,13 @@ CREATE TABLE IF NOT EXISTS application_history(
         'REJECTED',
         'WITHDRAWN'
     )
-),
+  ),
   changed_at TIMESTAMPTZ NOT NULL,
   CONSTRAINT fk_history_application
   FOREIGN KEY(application_id)
   REFERENCES applications(application_id)
   ON DELETE CASCADE
-)
+);
 
 -- =========================================================
 -- INTERVIEWS
@@ -148,7 +149,7 @@ CREATE TABLE IF NOT EXISTS application_history(
 
 CREATE TABLE IF NOT EXISTS interviews (
   interview_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  applicaton_id INT NOT NULL,
+  application_id INT NOT NULL,
   interview_type VARCHAR(20) NOT NULL
    CHECK (
             interview_type IN (
@@ -170,10 +171,10 @@ CREATE TABLE IF NOT EXISTS interviews (
   result VARCHAR(50)
   CHECK (
     result IN (
-      'PASSED'
-      'FAILED'
-      'PENDING'
-      'CANCELLED'
+      'PASSED',
+      'FAILED',
+      'PENDING',
+      'CANCELLED',
       'NO_SHOW'
     )),
 
@@ -183,7 +184,7 @@ CREATE TABLE IF NOT EXISTS interviews (
   FOREIGN KEY(application_id)
   REFERENCES applications(application_id)
   ON DELETE CASCADE
-)
+);
 
 CREATE INDEX IF NOT EXISTS idx_companies_user_id
     ON companies(user_id);
