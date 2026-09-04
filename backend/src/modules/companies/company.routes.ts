@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { createCompany, getCompanies } from "./company.controller";
+import { authMiddleware } from "../../middlewares/auth";
 
 const router = Router();
 
-router.post("/", createCompany);
-router.get("/", getCompanies);
+router.post("/", authMiddleware, createCompany);
+router.get("/", authMiddleware, getCompanies);
 
 export default router;

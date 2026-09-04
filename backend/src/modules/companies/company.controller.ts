@@ -21,7 +21,7 @@ export async function createCompany(
 
   try {
     const company = await insertCompany({
-      userId: 1,
+      userId: req.user!.userId,
       companyName: result.data.companyName,
       industry: result.data.industry,
       location: result.data.location,
@@ -44,7 +44,7 @@ export async function getCompanies(
   next: NextFunction,
 ) {
   try {
-    const companies = await findCompaniesByUserId(1);
+    const companies = await findCompaniesByUserId(req.user!.userId);
     return res.status(200).json({ data: companies });
   } catch (error) {
     return next(error);
