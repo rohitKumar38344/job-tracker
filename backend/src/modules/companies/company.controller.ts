@@ -4,6 +4,7 @@ import {
   findCompaniesByUserId,
   findCompanyByIdAndUserId,
   updateCompanyData,
+  deleteCompanyData,
 } from "./company.repository";
 import {
   companyIdSchema,
@@ -107,6 +108,33 @@ export async function updateCompany(
       });
     }
     return res.status(200).json({ data: updatedCompany });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function deleteCompany(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const parsedCompanyId = companyIdSchema.safeParse(req.params.companyId);
+
+  if (!parsedCompanyId.success) {
+    return res.status(400).json({ message: "Invalid company id." });
+  }
+
+  try {
+    const result = await deleteCompanyData(
+      req.user!.userId,
+      parsedCompanyId.data,
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Company not found." });
+    }
+    // make it 204 
+    return res.status(200).json({ message: "Company deleted successfully.",data: result });
   } catch (error) {
     return next(error);
   }

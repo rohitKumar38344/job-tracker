@@ -102,7 +102,6 @@ export async function findCompanyByIdAndUserId(
   return result.rows[0];
 }
 
-// const column = columnMap[key as keyof typeof columnMap];
 export async function updateCompanyData(
   companyId: number,
   userId: number,
@@ -166,4 +165,10 @@ export async function updateCompanyData(
     }
     throw error;
   }
+}
+
+export async function deleteCompanyData(userId: number, companyId: number){
+ const result = await pool.query(`
+  DELETE FROM companies WHERE company_id = $1 AND user_id = $2 RETURNING company_id, company_name`,[companyId, userId]);
+  return result.rows[0]
 }
