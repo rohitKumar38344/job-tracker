@@ -77,3 +77,20 @@ export async function findCompaniesByUserId(userId: number) {
   );
   return result.rows;
 }
+
+export async function findCompanyByIdAndUserId(companyId: number, userId: number){
+const result = await pool.query(`
+    SELECT
+    company_id,
+    company_name,
+    industry,
+    location,
+    company_size,
+    company_url,
+    linkedin_url,
+    created_at,
+    updated_at
+    FROM companies WHERE user_id = $1 AND company_id = $2
+  `,[userId, companyId])
+  return result.rows[0];
+}

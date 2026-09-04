@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import {
   insertCompany,
   findCompaniesByUserId,
+  findCompanyByIdAndUserId,
 } from "./company.repository";
 import { createCompanySchema } from "./company.validation";
 
@@ -46,6 +47,26 @@ export async function getCompanies(
   try {
     const companies = await findCompaniesByUserId(req.user!.userId);
     return res.status(200).json({ data: companies });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getCompany(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  // handle companyId = Number(abc) = NaN case
+  try {
+    const company = await findCompanyByIdAndUserId(
+      Number(req.params.companyId),
+      req.user!.userId,
+    );
+    if (!company) {
+      return res.status(404).json({ message: "Company not found." });
+    }
+    return res.status(200).json({ data: company });
   } catch (error) {
     return next(error);
   }
