@@ -1,6 +1,7 @@
 import { pool } from "../../db";
 import { isUniqueViolation } from "../../db/errors";
 import { AppError } from "../../errors/AppError";
+import { CompanyUpdateInput } from "./company.validation";
 
 export type createCompanyData = {
   userId: number;
@@ -78,8 +79,12 @@ export async function findCompaniesByUserId(userId: number) {
   return result.rows;
 }
 
-export async function findCompanyByIdAndUserId(companyId: number, userId: number){
-const result = await pool.query(`
+export async function findCompanyByIdAndUserId(
+  companyId: number,
+  userId: number,
+) {
+  const result = await pool.query(
+    `
     SELECT
     company_id,
     company_name,
@@ -91,6 +96,74 @@ const result = await pool.query(`
     created_at,
     updated_at
     FROM companies WHERE user_id = $1 AND company_id = $2
-  `,[userId, companyId])
+  `,
+    [userId, companyId],
+  );
   return result.rows[0];
+}
+
+// const column = columnMap[key as keyof typeof columnMap];
+export async function updateCompanyData(
+  companyId: number,
+  userId: number,
+  data: CompanyUpdateInput,
+) {
+  // Remember:Identifiers are whitelisted. Values are parameterized
+  const columnMap = {
+    companyName: "company_name",
+    industry: "industry",
+    location: "location",
+    companySize: "company_size",
+    companyUrl: "company_url",
+    linkedinUrl: "linkedin_url",
+    notes: "notes",
+  } as const;
+
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    const column = columnMap[key as keyof typeof columnMap];
+    fields.push(`${column} = $${values.length + 1}`);
+    values.push(value);
+  }
+
+  fields.push("updated_at = NOW()");
+
+  const userIdPlaceholder = values.length + 1;
+  const companyIdPlaceholder = values.length + 2;
+  try {
+    const result = await pool.query(
+      `
+  UPDATE companies
+  SET ${fields.join(", ")}
+  WHERE user_id = $${userIdPlaceholder}
+  AND company_id = $${companyIdPlaceholder}
+  RETURNING
+  company_id,
+  company_name,
+  industry,
+  location,
+  company_size,
+  company_url,
+  linkedin_url,
+  notes,
+  created_at,
+  updated_at`,
+      [...values, userId, companyId],
+    );
+
+    return result.rows[0];
+  } catch (error) {
+    if (
+      isUniqueViolation(error) &&
+      error.constraint === "uq_company_per_user"
+    ) {
+      throw new AppError(
+        `A company with the name "${data.companyName}" already exists.`,
+        409,
+      );
+    }
+    throw error;
+  }
 }

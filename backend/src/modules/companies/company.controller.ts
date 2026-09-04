@@ -3,8 +3,13 @@ import {
   insertCompany,
   findCompaniesByUserId,
   findCompanyByIdAndUserId,
+  updateCompanyData,
 } from "./company.repository";
-import { createCompanySchema } from "./company.validation";
+import {
+  companyIdSchema,
+  createCompanySchema,
+  updateCompanySchema,
+} from "./company.validation";
 
 export async function createCompany(
   req: Request,
@@ -67,6 +72,41 @@ export async function getCompany(
       return res.status(404).json({ message: "Company not found." });
     }
     return res.status(200).json({ data: company });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function updateCompany(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const companyIdResult = companyIdSchema.safeParse(req.params.companyId);
+  if (!companyIdResult.success) {
+    return res.status(400).json({ message: "Invalid company ID." });
+  }
+  const result = updateCompanySchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      message: "Invalid data",
+      errors: result.error.flatten().fieldErrors,
+    });
+  }
+  try {
+    const updatedCompany = await updateCompanyData(
+      companyIdResult.data,
+      req.user!.userId,
+      result.data,
+    );
+
+    if (!updatedCompany) {
+      return res.status(404).json({
+        message: "Company not found.",
+      });
+    }
+    return res.status(200).json({ data: updatedCompany });
   } catch (error) {
     return next(error);
   }
