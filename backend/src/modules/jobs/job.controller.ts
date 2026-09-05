@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { createJobSchema, filterJobSchema } from "./job.validation";
-import { filterJobsByUserId, findJobsByUserId, insertJob } from "./job.repository";
+import { createJobSchema, filterJobSchema, JobIdSchema } from "./job.validation";
+import { filterJobsByUserId, findJobByUserIdAndJobId, insertJob } from "./job.repository";
 
 export async function createJob(
   req: Request,
@@ -32,15 +32,23 @@ export async function createJob(
   }
 }
 
-export async function getJobs(
+export async function getJob(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
-  try {
-    const jobs = await findJobsByUserId(req.user!.userId);
+  const jobId = JobIdSchema.safeParse(req.params.jobId);
 
-    return res.status(200).json({ data: jobs });
+  if(!jobId.success){
+    return res.status(400).json({errors: jobId.error.flatten().fieldErrors})
+  }
+  try {
+    const job = await findJobByUserIdAndJobId(req.user!.userId, jobId.data);
+
+    if(!job){
+      return res.status(404).json({message: "No job found."})
+    }
+    return res.status(200).json({ data: job });
   } catch (error) {
     return next(error);
   }
@@ -53,8 +61,8 @@ export async function filterJobs(req: Request, res: Response, next: NextFunction
     if(!parsedFilters.success){
       return res.status(400).json({message: "Invalid filters."})
     }
-    const jobs = await filterJobsByUserId(req.user!.userId, parsedFilters.data);
-    return res.status(200).json({data: jobs})
+    const result = await filterJobsByUserId(req.user!.userId, parsedFilters.data);
+    return res.status(200).json({data: result.jobs, pagination: result.pagination})
   } catch (error) {
     return next(error)
   }

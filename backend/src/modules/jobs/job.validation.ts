@@ -64,6 +64,8 @@ export const filterJobSchema = z
       "discoveredDate",
     ]).optional(),
     sortOrder: z.enum(["asc", "desc"]).optional(),
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(10),
   })
   .refine(
     (data) =>
@@ -78,3 +80,5 @@ export const filterJobSchema = z
   );
 
 export type JobFilters = z.infer<typeof filterJobSchema>;
+
+export const JobIdSchema = z.coerce.number().int().positive()

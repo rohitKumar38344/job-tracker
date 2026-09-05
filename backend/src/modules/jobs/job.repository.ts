@@ -79,7 +79,7 @@ export async function insertJob(userId: number, data: JobSchema) {
   return result.rows[0];
 }
 
-export async function findJobsByUserId(userId: number) {
+export async function findJobByUserIdAndJobId(userId: number, jobId: number) {
   const result = await pool.query(
     `
     SELECT
@@ -99,12 +99,12 @@ export async function findJobsByUserId(userId: number) {
     FROM companies AS c
     INNER JOIN jobs AS j
       ON c.company_id = j.company_id
-    WHERE c.user_id = $1
+    WHERE c.user_id = $1 AND j.job_id = $2
     `,
-    [userId],
+    [userId, jobId],
   );
 
-  return result.rows;
+  return result.rows[0];
 }
 
 export async function filterJobsByUserId(userId: number, data: JobFilters) {
@@ -140,17 +140,19 @@ export async function filterJobsByUserId(userId: number, data: JobFilters) {
     values.push(data.salaryMax);
   }
   // console.log('whereclause',whereClause, values)
-  const sortOrder = data.sortOrder === 'asc' ? "ASC" : "DESC";
+  const sortOrder = data.sortOrder === "asc" ? "ASC" : "DESC";
   const sortColMap = {
     title: "j.title",
     salaryMin: "j.salary_min",
     salaryMax: "j.salary_max",
     createdAt: "j.created_at",
-    discoveredDate: "j.discovered_date"
+    discoveredDate: "j.discovered_date",
   } as const;
-  
-  const sortCol =  data.sortBy ? sortColMap[data.sortBy]: 'j.created_at' ;
-  console.log('final',  `ORDER BY ${sortCol} ${sortOrder}, j.job_id DESC`)
+
+  const sortCol = data.sortBy ? sortColMap[data.sortBy] : "j.created_at";
+
+  const offset = (data.page - 1) * data.limit;
+  const whereSql = whereClause.join(" AND ");
   const result = await pool.query(
     `
     SELECT
@@ -172,11 +174,33 @@ export async function filterJobsByUserId(userId: number, data: JobFilters) {
     FROM companies AS c
     INNER JOIN jobs AS j
       ON c.company_id = j.company_id
-    WHERE ${whereClause.join(" AND ")}
+    WHERE ${whereSql}
     ORDER BY ${sortCol} ${sortOrder}, j.job_id DESC
+    LIMIT $${values.length + 2}
+    OFFSET $${values.length + 1}
+    `,
+    [...values, offset, data.limit],
+  );
+  const countResult = await pool.query(
+    `
+    SELECT
+    COUNT(*) AS total
+    FROM companies AS c
+    INNER JOIN jobs AS j
+      ON c.company_id = j.company_id
+    WHERE ${whereSql}
     `,
     values,
   );
-
-  return result.rows;
+  const total = Number(countResult.rows[0].total);
+  const totalPages = Math.ceil(total / data.limit);
+  return {
+    jobs: result.rows,
+    pagination: {
+      page: data.page,
+      limit: data.limit,
+      total,
+      totalPages,
+    },
+  };
 }
