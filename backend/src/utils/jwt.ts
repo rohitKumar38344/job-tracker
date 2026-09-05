@@ -9,7 +9,7 @@ export type AccessTokenPayload = z.infer<typeof accessTokenPayloadSchema>;
 
 export function singAccessToken(userId: number) {
   return jwt.sign({ userId }, env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "30m",
     subject: String(userId),
   });
 }
