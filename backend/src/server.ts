@@ -2,6 +2,7 @@ import "dotenv/config";
 import express, { Request, Response } from "express";
 import { pool } from "./db";
 import companyRouter from "./modules/companies/company.routes";
+import jobRouter from "./modules/jobs/job.routes";
 import authRouter from "./modules/auth/auth.routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { env } from "./config/env";
@@ -26,6 +27,7 @@ app.get("/health", async (req: Request, res: Response) => {
 });
 
 app.use("/api/companies", companyRouter);
+app.use("/api/jobs", jobRouter);
 app.use("/api/auth", authRouter);
 app.use(errorHandler);
 app.listen(env.PORT, () => {
