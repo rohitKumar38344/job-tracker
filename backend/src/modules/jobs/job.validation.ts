@@ -56,13 +56,9 @@ export const filterJobSchema = z
     salaryMin: z.coerce.number().nonnegative().optional(),
     salaryMax: z.coerce.number().nonnegative().optional(),
 
-    sortBy: z.enum([
-      "title",
-      "salaryMin",
-      "salaryMax",
-      "createdAt",
-      "discoveredDate",
-    ]).optional(),
+    sortBy: z
+      .enum(["title", "salaryMin", "salaryMax", "createdAt", "discoveredDate"])
+      .optional(),
     sortOrder: z.enum(["asc", "desc"]).optional(),
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(10),
@@ -81,4 +77,42 @@ export const filterJobSchema = z
 
 export type JobFilters = z.infer<typeof filterJobSchema>;
 
-export const JobIdSchema = z.coerce.number().int().positive()
+export const jobIdSchema = z.coerce.number().int().positive();
+
+export const updateJobSchema = z
+  .object({
+    title: z.string().trim().min(1).optional(),
+    description: z.string().trim().min(1).optional(),
+    location: z.string().trim().min(1).optional(),
+    employmentType: z
+      .enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"])
+      .optional(),
+    workArrangement: z.enum(["REMOTE", "HYBRID", "ONSITE"]).optional(),
+    salaryMin: z.coerce.number().nonnegative().optional(),
+    salaryMax: z.coerce.number().nonnegative().optional(),
+    salaryCurrency: z
+      .string()
+      .length(3, "Currency must be a 3-letter code")
+      .toUpperCase()
+      .optional(),
+    jobUrl: z.url("Invalid job URL").optional(),
+    source: z.string().trim().max(255).optional(),
+    discoveredDate: z.coerce.date().optional(),
+    closingAt: z.coerce.date().optional(),
+    notes: z.string().trim().optional(),
+  })
+  .refine(
+    (data) =>
+      data.salaryMin === undefined ||
+      data.salaryMax === undefined ||
+      data.salaryMax >= data.salaryMin,
+    {
+      message:
+        "Maximum salary must be greater than or equal to minimum salary.",
+      path: ["salaryMax"],
+    },
+  ).refine(data => Object.keys(data).length > 0, {
+    message: "At least one field must be provided for update."
+  });
+
+export type UpdateJobInput = z.infer<typeof updateJobSchema>;

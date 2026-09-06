@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { createJobSchema, filterJobSchema, JobIdSchema } from "./job.validation";
-import { filterJobsByUserId, findJobByUserIdAndJobId, insertJob } from "./job.repository";
+import { createJobSchema, filterJobSchema, jobIdSchema, updateJobSchema } from "./job.validation";
+import { filterJobsByUserId, findJobByUserIdAndJobId, insertJob, updateJobData } from "./job.repository";
+import formatZodError from "../../utils/validation";
+import { updateJobService } from "./job.service";
 
 export async function createJob(
   req: Request,
@@ -37,7 +39,7 @@ export async function getJob(
   res: Response,
   next: NextFunction,
 ) {
-  const jobId = JobIdSchema.safeParse(req.params.jobId);
+  const jobId = jobIdSchema.safeParse(req.params.jobId);
 
   if(!jobId.success){
     return res.status(400).json({errors: jobId.error.flatten().fieldErrors})
@@ -63,6 +65,29 @@ export async function filterJobs(req: Request, res: Response, next: NextFunction
     }
     const result = await filterJobsByUserId(req.user!.userId, parsedFilters.data);
     return res.status(200).json({data: result.jobs, pagination: result.pagination})
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export async function updateJob(req: Request, res: Response, next: NextFunction) {
+  // PATCH /api/jobs/:jobId
+  const parsedJobId = jobIdSchema.safeParse(req.params.jobId)
+  if(!parsedJobId.success){
+    return res.status(400).json({message: "Invalid job id."})
+  }
+  
+  const parsedInput = updateJobSchema.safeParse(req.body);
+
+  if(!parsedInput.success){
+    return res.status(400).json({message: "Invalid data.", errors: formatZodError(parsedInput.error)})
+  }
+  try {
+    const result = await updateJobService(req.user!.userId, parsedJobId.data, parsedInput.data)
+    if(!result){
+      return res.status(404).json({message: "Job not found."})
+    }
+    return res.status(200).json({data: result})
   } catch (error) {
     return next(error)
   }

@@ -138,17 +138,24 @@ export async function updateCompanyData(
   SET ${fields.join(", ")}
   WHERE user_id = $${userIdPlaceholder}
   AND company_id = $${companyIdPlaceholder}
-  RETURNING
-  company_id,
-  company_name,
-  industry,
-  location,
-  company_size,
-  company_url,
-  linkedin_url,
-  notes,
-  created_at,
-  updated_at`,
+  job_id
+  company_id
+  company_name
+  title
+  description
+  location
+  employment_type
+  work_arrangement
+  salary_min
+  salary_max
+  job_url
+  source
+  discovered_date
+  closing_at
+  notes
+  created_at
+  updated_at
+`,
       [...values, userId, companyId],
     );
 

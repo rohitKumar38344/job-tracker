@@ -1,5 +1,5 @@
 import { pool } from "../../db";
-import { JobFilters, JobSchema } from "./job.validation";
+import { JobFilters, JobSchema, UpdateJobInput } from "./job.validation";
 
 export async function insertJob(userId: number, data: JobSchema) {
   const result = await pool.query(
@@ -91,6 +91,8 @@ export async function findJobByUserIdAndJobId(userId: number, jobId: number) {
     j.location,
     j.employment_type,
     j.work_arrangement,
+    j.salary_min,
+    j.salary_max,
     j.job_url,
     j.source,
     j.discovered_date,
@@ -203,4 +205,74 @@ export async function filterJobsByUserId(userId: number, data: JobFilters) {
       totalPages,
     },
   };
+}
+
+export async function updateJobData(
+  userId: number,
+  jobId: number,
+  data: UpdateJobInput,
+) {
+  const updateColMap = {
+    title: "title",
+    description: "description",
+    location: "location",
+    employmentType: "employment_type",
+    workArrangement: "work_arrangement",
+    salaryMin: "salary_min",
+    salaryMax: "salary_max",
+    salaryCurrency: "salary_currency",
+    jobUrl: "job_url",
+    source: "source",
+    discoveredDate: "discovered_date",
+    closingAt: "closing_at",
+    notes: "notes",
+  } as const;
+
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    const column = updateColMap[key as keyof typeof updateColMap];
+
+    fields.push(`${column} = $${values.length + 1}`);
+    values.push(value);
+  }
+
+  fields.push("updated_at = NOW()");
+
+  const jobIdPlaceholder = values.length + 1;
+  const userIdPlaceholder = values.length + 2;
+
+  const result = await pool.query(
+    `
+    UPDATE jobs AS j
+    SET
+      ${fields.join(", ")}
+    FROM companies AS c
+    WHERE j.company_id = c.company_id
+      AND j.job_id = $${jobIdPlaceholder}
+      AND c.user_id = $${userIdPlaceholder}
+    RETURNING
+      j.job_id,
+      j.company_id,
+      c.company_name,
+      j.title,
+      j.description,
+      j.location,
+      j.employment_type,
+      j.work_arrangement,
+      j.salary_min,
+      j.salary_max,
+      j.job_url,
+      j.source,
+      j.discovered_date,
+      j.closing_at,
+      j.notes,
+      j.created_at,
+      j.updated_at
+    `,
+    [...values, jobId, userId],
+  );
+
+  return result.rows[0];  
 }

@@ -32,7 +32,7 @@ export async function registerUser(data: {
 export async function loginUser(data: { email: string; password: string }) {
   const user = await findUserByEmail(data.email);
   if (!user) throw new AppError("Invalid email or password", 401);
-  console.log(user);
+
   const passwordMatches = await argon2.verify(
     user.password_hash,
     data.password,
