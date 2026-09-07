@@ -276,3 +276,19 @@ export async function updateJobData(
 
   return result.rows[0];  
 }
+
+export async function deleteJobData(userId: number, jobId: number){
+  const result = await pool.query(`
+    DELETE FROM jobs AS j
+    USING companies AS c
+    WHERE c.company_id = j.company_id
+    AND c.user_id = $1
+    AND j.job_id = $2
+    RETURNING
+     j.job_id,
+     j.title,
+     c.company_id
+    `, [userId, jobId]);
+
+  return result.rows[0]
+}
