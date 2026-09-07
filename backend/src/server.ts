@@ -4,6 +4,7 @@ import { pool } from "./db";
 import companyRouter from "./modules/companies/company.routes";
 import jobRouter from "./modules/jobs/job.routes";
 import authRouter from "./modules/auth/auth.routes";
+import applicationRouter from "./modules/applications/application.routes"
 import { errorHandler } from "./middlewares/error-handler";
 import { env } from "./config/env";
 
@@ -26,9 +27,11 @@ app.get("/health", async (req: Request, res: Response) => {
   }
 });
 
+app.use("/api/auth", authRouter);
 app.use("/api/companies", companyRouter);
 app.use("/api/jobs", jobRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/applications", applicationRouter)
+
 app.use(errorHandler);
 app.listen(env.PORT, () => {
   console.log(`Server is running on http://localhost:${env.PORT}`);
