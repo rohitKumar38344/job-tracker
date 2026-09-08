@@ -48,3 +48,6 @@ export const applicationFilterSchema = z
   );
 
 export type ApplicationFilters = z.infer<typeof applicationFilterSchema>;
+
+export const applicationIdSchema = z.coerce.number().int().positive();
+export type ApplicationId = z.infer<typeof applicationIdSchema>

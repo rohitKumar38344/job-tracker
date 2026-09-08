@@ -1,6 +1,7 @@
 import { pool } from "../../db";
 import {
   ApplicationFilters,
+  ApplicationId,
   CreateApplicationInput,
 } from "./application.validations";
 
@@ -121,4 +122,33 @@ export async function findApplicationsByUserId(
   );
 
   return result.rows;
+}
+
+export async function findApplicationByIdAndUserId(userId: number, applicationId: ApplicationId) {
+  const result = await pool.query(
+    `
+    SELECT
+      a.application_id,
+      a.application_date,
+      a.current_status,
+      a.resume_name,
+      a.cover_letter_used,
+      a.referral_source,
+      a.notes,
+      c.title AS company_name,
+      c.changed_at AS status_change,
+      i.interview_type,
+      i.scheduled_at AS interview_scheduled,
+      i.duration_minutes AS duration,
+      i.meeting_link,
+      i.location,
+      i.interviewer,
+      i.notes AS interview_notes,
+      i.result
+    FROM applications AS a
+    INNER JOIN companies c ON a.company_id = c.company_id
+    
+    `
+    
+  )
 }

@@ -11,6 +11,8 @@ import {
   createCompanySchema,
   updateCompanySchema,
 } from "./company.validation";
+import { sendError, sendSuccess } from "../../utils/response";
+import formatZodError from "../../utils/validation";
 
 export async function createCompany(
   req: Request,
@@ -85,15 +87,12 @@ export async function updateCompany(
 ) {
   const companyIdResult = companyIdSchema.safeParse(req.params.companyId);
   if (!companyIdResult.success) {
-    return res.status(400).json({ message: "Invalid company ID." });
+    return sendError(res, 400, "Validation failed.", "VALIDATION_ERROR", formatZodError(companyIdResult.error))
   }
   const result = updateCompanySchema.safeParse(req.body);
 
   if (!result.success) {
-    return res.status(400).json({
-      message: "Invalid data",
-      errors: result.error.flatten().fieldErrors,
-    });
+    return sendError(res, 400, "Validation Failed.", "VALIDATION_ERROR", formatZodError(result.error))
   }
   try {
     const updatedCompany = await updateCompanyData(
@@ -103,11 +102,9 @@ export async function updateCompany(
     );
 
     if (!updatedCompany) {
-      return res.status(404).json({
-        message: "Company not found.",
-      });
+      return sendSuccess(res, updateCompany, 404, "Company not found.")
     }
-    return res.status(200).json({ data: updatedCompany });
+    return sendSuccess(res, updatedCompany, 200)
   } catch (error) {
     return next(error);
   }
@@ -121,7 +118,7 @@ export async function deleteCompany(
   const parsedCompanyId = companyIdSchema.safeParse(req.params.companyId);
 
   if (!parsedCompanyId.success) {
-    return res.status(400).json({ message: "Invalid company id." });
+    return sendError(res, 400, "Invalid company id.", "VALIDATION_ERROR", formatZodError(parsedCompanyId.error))
   }
 
   try {
@@ -131,10 +128,9 @@ export async function deleteCompany(
     );
 
     if (!result) {
-      return res.status(404).json({ message: "Company not found." });
+      return sendSuccess(res, result, 404, "Company not found.")
     }
-    // make it 204 
-    return res.status(200).json({ message: "Company deleted successfully.",data: result });
+    return sendSuccess(res, result, 200, "Company deleted successfully.")
   } catch (error) {
     return next(error);
   }

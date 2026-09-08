@@ -26,6 +26,7 @@ export async function updateJobService(
     throw new AppError(
       "Maximum salary must be equal to or greater than minimum salary.",
       400,
+      "INVALID_SALARY_RANGE",
     );
   }
 

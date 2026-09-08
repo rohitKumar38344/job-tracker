@@ -19,7 +19,7 @@ export async function addApplicationService(
     return application;
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new AppError("An application already exists for this job.", 409);
+      throw new AppError("An application already exists for this job.", 409, "APPLICATION_ALREADY_EXISTS");
     }
     throw error;
   }

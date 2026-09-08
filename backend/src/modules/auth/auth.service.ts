@@ -11,7 +11,7 @@ export async function registerUser(data: {
   const existingUser = await findUserByEmail(data.email);
 
   if (existingUser) {
-    throw new AppError("An account with this email already exists.", 409);
+    throw new AppError("An account with this email already exists.", 409, "ACCOUNT_ALREADY_EXISTS");
   }
 
   const passwordHash = await argon2.hash(data.password);
@@ -31,14 +31,14 @@ export async function registerUser(data: {
 
 export async function loginUser(data: { email: string; password: string }) {
   const user = await findUserByEmail(data.email);
-  if (!user) throw new AppError("Invalid email or password", 401);
+  if (!user) throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
 
   const passwordMatches = await argon2.verify(
     user.password_hash,
     data.password,
   );
   if (!passwordMatches) {
-    throw new AppError("Invalid email or password", 401);
+    throw new AppError("Invalid email or password", 401, 'INVALID_CREDENTIALS');
   }
   const accessToken = singAccessToken(user.user_id);
   return {

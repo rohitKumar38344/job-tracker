@@ -55,7 +55,7 @@ export async function insertCompany(data: createCompanyData) {
       isUniqueViolation(error) &&
       error.constraint === "uq_company_per_user"
     ) {
-      throw new AppError("A company with this name already exists.", 409);
+      throw new AppError("A company with this name already exists.", 409, "COMPANY_ALREADY_EXISTS");
     }
     throw error;
   }
@@ -168,6 +168,7 @@ export async function updateCompanyData(
       throw new AppError(
         `A company with the name "${data.companyName}" already exists.`,
         409,
+        "COMPANY_ALREADY_EXISTS"
       );
     }
     throw error;

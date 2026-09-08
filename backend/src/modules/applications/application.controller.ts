@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from "express";
-import { applicationFilterSchema, createApplicationSchema } from "./application.validations";
-import { formatError } from "zod";
+import {
+  applicationFilterSchema,
+  createApplicationSchema,
+  applicationIdSchema,
+} from "./application.validations";
 import { addApplicationService } from "./application.service";
 import { findApplicationsByUserId } from "./application.repository";
+import formatZodError from "../../utils/validation";
+import { sendError, sendSuccess } from "../../utils/response";
 
 export async function createApplication(
   req: Request,
@@ -11,10 +16,13 @@ export async function createApplication(
 ) {
   const parsedApplication = createApplicationSchema.safeParse(req.body);
   if (!parsedApplication.success) {
-    return res.status(400).json({
-      message: "Invalid application data",
-      errors: formatError(parsedApplication.error),
-    });
+    return sendError(
+      res,
+      400,
+      "Validation failed.",
+      "VALIDATION_ERROR",
+      formatZodError(parsedApplication.error),
+    );
   }
   try {
     const application = await addApplicationService(
@@ -23,12 +31,14 @@ export async function createApplication(
     );
 
     if (!application) {
-      return res.status(404).json({ message: "Job not found." });
+      return sendError(res, 404, "Job not found.", "JOB_NOT_FOUND");
     }
-    return res.status(201).json({
-      message: "Application created successfully.",
-      data: application,
-    });
+    return sendSuccess(
+      res,
+      application,
+      201,
+      "Application created successfully.",
+    );
   } catch (error) {
     return next(error);
   }
@@ -40,13 +50,58 @@ export async function getApplications(
   next: NextFunction,
 ) {
   const parsedQuery = applicationFilterSchema.safeParse(req.query);
-  if(!parsedQuery.success){
-    return res.status(400).json({message: "Invalid query", error: formatError(parsedQuery.error)})
+  if (!parsedQuery.success) {
+    return sendError(
+      res,
+      400,
+      "Validation failed.",
+      "VALIDATION_ERROR",
+      formatZodError(parsedQuery.error),
+    );
   }
   try {
-    const applications = await findApplicationsByUserId(req.user!.userId, parsedQuery.data);
+    const applications = await findApplicationsByUserId(
+      req.user!.userId,
+      parsedQuery.data,
+    );
+    return sendSuccess(res, applications, 200);
+  } catch (error) {
+    return next(error);
+  }
+}
 
-    return res.status(200).json({ data: applications });
+export async function getApplicationById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const parsedApplicationId = applicationIdSchema.safeParse(
+    req.params.applicationId,
+  );
+  if (!parsedApplicationId.success) {
+    return sendError(
+      res,
+      400,
+      "Validation failed.",
+      "VALIDATION_ERROR",
+      formatZodError(parsedApplicationId.error),
+    );
+  }
+
+  try {
+    const application = await findApplicationByIdAndUserId(
+      req.user!.userId,
+      parsedApplicationId.data,
+    );
+    if (!application) {
+      return sendError(
+        res,
+        404,
+        "Application not found.",
+        "APPLICATION_NOT_FOUND",
+      );
+    }
+    return sendSuccess(res, application, 200);
   } catch (error) {
     return next(error);
   }
