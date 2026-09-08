@@ -4,8 +4,8 @@ import {
   createApplicationSchema,
   applicationIdSchema,
 } from "./application.validations";
-import { addApplicationService } from "./application.service";
-import { findApplicationsByUserId } from "./application.repository";
+import { addApplicationService, getApplicationByIdService } from "./application.service";
+import { findApplicationsByUserId, findApplicationByIdAndUserId } from "./application.repository";
 import formatZodError from "../../utils/validation";
 import { sendError, sendSuccess } from "../../utils/response";
 
@@ -89,7 +89,7 @@ export async function getApplicationById(
   }
 
   try {
-    const application = await findApplicationByIdAndUserId(
+    const application = await getApplicationByIdService(
       req.user!.userId,
       parsedApplicationId.data,
     );

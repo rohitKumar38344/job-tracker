@@ -1,7 +1,6 @@
 import { pool } from "../../db";
 import {
   ApplicationFilters,
-  ApplicationId,
   CreateApplicationInput,
 } from "./application.validations";
 
@@ -95,7 +94,7 @@ export async function findApplicationsByUserId(
   const sortCol = query.sortBy ? sortColMap[query.sortBy] : "a.created_at";
   const sortOrder = query.sortOrder === "asc" ? "ASC" : "DESC";
   const result = await pool.query(
-      `
+    `
     SELECT
       a.application_id,
       j.job_id,
@@ -124,31 +123,51 @@ export async function findApplicationsByUserId(
   return result.rows;
 }
 
-export async function findApplicationByIdAndUserId(userId: number, applicationId: ApplicationId) {
+export async function findApplicationByIdAndUserId(
+  userId: number,
+  applicationId: number,
+) {
   const result = await pool.query(
     `
     SELECT
       a.application_id,
+      j.job_id,
+      j.title AS job_title,
+      c.company_id,
+      c.company_name,
       a.application_date,
       a.current_status,
       a.resume_name,
       a.cover_letter_used,
       a.referral_source,
       a.notes,
-      c.title AS company_name,
-      c.changed_at AS status_change,
-      i.interview_type,
-      i.scheduled_at AS interview_scheduled,
-      i.duration_minutes AS duration,
-      i.meeting_link,
-      i.location,
-      i.interviewer,
-      i.notes AS interview_notes,
-      i.result
+      a.created_at,
+      a.updated_at
+      
     FROM applications AS a
-    INNER JOIN companies c ON a.company_id = c.company_id
-    
+    INNER JOIN jobs AS j
+     ON a.job_id = j.job_id
+    INNER JOIN companies AS c
+      ON j.company_id = c.company_id
+    WHERE c.user_id = $1 AND a.application_id = $2 
+    `,
+    [userId, applicationId],
+  );
+  return result.rows[0];
+}
+
+export async function findApplicationHistory(applicationId: number) {
+  const result = await pool.query(
     `
-    
-  )
+    SELECT
+     application_history_id,
+     status,
+     changed_at
+    FROM application_history
+    WHERE application_id = $1
+    ORDER BY changed_at ASC;
+    `,
+    [applicationId],
+  );
+  return result.rows;
 }
