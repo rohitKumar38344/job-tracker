@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { createApplication } from "./application.controller";
+import { createApplication, getApplications } from "./application.controller";
 import { authMiddleware } from "../../middlewares/auth";
-// POST /api/applications
 
 const router = Router();
 router.post("/", authMiddleware, createApplication);
+router.get('/', authMiddleware, getApplications)
 
 export default router;

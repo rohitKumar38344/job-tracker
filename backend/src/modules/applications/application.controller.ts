@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { createApplicationSchema } from "./application.validations";
+import { applicationFilterSchema, createApplicationSchema } from "./application.validations";
 import { formatError } from "zod";
 import { addApplicationService } from "./application.service";
+import { findApplicationsByUserId } from "./application.repository";
 
 export async function createApplication(
   req: Request,
@@ -28,6 +29,24 @@ export async function createApplication(
       message: "Application created successfully.",
       data: application,
     });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getApplications(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const parsedQuery = applicationFilterSchema.safeParse(req.query);
+  if(!parsedQuery.success){
+    return res.status(400).json({message: "Invalid query", error: formatError(parsedQuery.error)})
+  }
+  try {
+    const applications = await findApplicationsByUserId(req.user!.userId, parsedQuery.data);
+
+    return res.status(200).json({ data: applications });
   } catch (error) {
     return next(error);
   }

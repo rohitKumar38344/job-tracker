@@ -1,9 +1,10 @@
 import { pool } from "../../db";
-import { CreateApplicationInput } from "./application.validations";
+import {
+  ApplicationFilters,
+  CreateApplicationInput,
+} from "./application.validations";
 
-export async function insertApplication(
-  data: CreateApplicationInput,
-) {
+export async function insertApplication(data: CreateApplicationInput) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -38,7 +39,7 @@ export async function insertApplication(
         data.resumeName,
         data.coverLetterUsed,
         data.referralSource,
-        data.notes
+        data.notes,
       ],
     );
     // 2. Insert initial history
@@ -55,11 +56,69 @@ export async function insertApplication(
     );
     // 3. Commit
     await client.query("COMMIT");
-    return result.rows[0]
+    return result.rows[0];
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
   }
+}
+
+export async function findApplicationsByUserId(
+  userId: number,
+  query: ApplicationFilters,
+) {
+  const sortColMap = {
+    applicationDate: "a.application_date",
+    createdAt: "a.created_at",
+    updatedAt: "a.updated_at",
+  } as const;
+
+  const conditions: string[] = ["c.user_id = $1"];
+  const values: unknown[] = [userId];
+
+  if (query.status !== undefined) {
+    conditions.push(`a.current_status = $${values.length + 1}`);
+    values.push(query.status);
+  }
+  if (query.applicationDateFrom !== undefined) {
+    conditions.push(`a.application_date >= $${values.length + 1}`);
+    values.push(query.applicationDateFrom);
+  }
+  if (query.applicationDateTo !== undefined) {
+    conditions.push(`a.application_date <= $${values.length + 1}`);
+    values.push(query.applicationDateTo);
+  }
+  const whereClause = conditions.join(" AND ");
+  const sortCol = query.sortBy ? sortColMap[query.sortBy] : "a.created_at";
+  const sortOrder = query.sortOrder === "asc" ? "ASC" : "DESC";
+  const result = await pool.query(
+      `
+    SELECT
+      a.application_id,
+      j.job_id,
+      j.title AS job_title,
+      c.company_id,
+      c.company_name,
+      a.application_date,
+      a.current_status,
+      a.resume_name,
+      a.cover_letter_used,
+      a.referral_source,
+      a.notes,
+      a.created_at,
+      a.updated_at
+    FROM applications AS a
+    INNER JOIN jobs AS j
+      ON a.job_id = j.job_id
+    INNER JOIN companies AS c
+      ON j.company_id = c.company_id
+    WHERE ${whereClause}
+    ORDER BY ${sortCol} ${sortOrder}, a.application_id DESC
+    `,
+    values,
+  );
+
+  return result.rows;
 }
