@@ -10,7 +10,11 @@ import {
   getApplicationByIdService,
   updateApplicationService,
 } from "./application.service";
-import { findApplicationsByUserId } from "./application.repository";
+import {
+  deleteApplicationData,
+  findApplicationByIdAndUserId,
+  findApplicationsByUserId,
+} from "./application.repository";
 import formatZodError from "../../utils/validation";
 import { sendError, sendSuccess } from "../../utils/response";
 
@@ -160,6 +164,50 @@ export async function updateApplicationById(
       updatedApplication,
       200,
       "Application updated successfully.",
+    );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function deleteApplication(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const parsedApplicationId = applicationIdSchema.safeParse(
+    req.params.applicationId,
+  );
+
+  if (!parsedApplicationId.success) {
+    return sendError(
+      res,
+      400,
+      "Validation Failed.",
+      "VALIDATION_ERROR",
+      formatZodError(parsedApplicationId.error),
+    );
+  }
+
+  try {
+    const deletedApplication = await deleteApplicationData(
+      req.user!.userId,
+      parsedApplicationId.data,
+    );
+
+    if (deletedApplication === undefined) {
+    return sendError(
+      res,
+      404,
+      "Application not found.",
+      "APPLICATION_NOT_FOUND",
+    );
+  }
+    return sendSuccess(
+      res,
+      deletedApplication,
+      200,
+      "Application deleted successfully.",
     );
   } catch (error) {
     return next(error);

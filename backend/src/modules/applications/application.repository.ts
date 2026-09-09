@@ -277,3 +277,17 @@ function buildUpdateFields(data: UpdateApplicationInput) {
   }
   return { fields, values };
 }
+
+export async function deleteApplicationData(userId: number,applicationId: number){
+  const result = await pool.query(`
+    DELETE FROM applications As a
+    USING jobs AS j
+    JOIN companies AS c ON j.company_id = c.company_id
+    WHERE a.job_id = j.job_id
+      AND c.user_id = $1
+      AND a.application_id = $2
+    RETURNING a.application_id, a.job_id, a.current_status;
+  `, [userId, applicationId]);
+    
+  return result.rows[0]
+}
