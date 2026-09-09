@@ -3,7 +3,10 @@ import { applicationIdSchema } from "../applications/application.validations";
 import { sendError, sendSuccess } from "../../utils/response";
 import formatZodError from "../../utils/validation";
 import { createInterviewSchema } from "./interview.validation";
-import { insertInterview } from "./interview.repository";
+import {
+  findInterviewsByApplicationIdAndUserId,
+  insertInterview,
+} from "./interview.repository";
 
 export async function createInterview(
   req: Request,
@@ -53,6 +56,44 @@ export async function createInterview(
     }
 
     return sendSuccess(res, interview, 201, "Interview created successfully.");
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getInterviews(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const parsedApplicationId = applicationIdSchema.safeParse(
+      req.params.applicationId,
+    );
+
+    if (!parsedApplicationId.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid application id.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedApplicationId.error),
+      );
+    }
+    const interviews = await findInterviewsByApplicationIdAndUserId(
+      req.user!.userId,
+      parsedApplicationId.data,
+    );
+
+     if (interviews === undefined) {
+      return sendError(
+        res,
+        404,
+        "Application not found.",
+        "APPLICATION_NOT_FOUND",
+      );
+    }
+    return sendSuccess(res, interviews, 200);
   } catch (error) {
     return next(error);
   }
