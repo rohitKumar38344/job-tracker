@@ -2,11 +2,19 @@ import { NextFunction, Request, Response } from "express";
 import { applicationIdSchema } from "../applications/application.validations";
 import { sendError, sendSuccess } from "../../utils/response";
 import formatZodError from "../../utils/validation";
-import { createInterviewSchema } from "./interview.validation";
 import {
+  createInterviewSchema,
+  interviewIdSchema,
+  updateInterviewSchema,
+} from "./interview.validation";
+import {
+  deleteInterviewData,
+  findInterviewByIdAndUserId,
   findInterviewsByApplicationIdAndUserId,
   insertInterview,
+  updateInterviewData,
 } from "./interview.repository";
+import { deleteApplicationData } from "../applications/application.repository";
 
 export async function createInterview(
   req: Request,
@@ -85,7 +93,7 @@ export async function getInterviews(
       parsedApplicationId.data,
     );
 
-     if (interviews === undefined) {
+    if (interviews === undefined) {
       return sendError(
         res,
         404,
@@ -94,6 +102,130 @@ export async function getInterviews(
       );
     }
     return sendSuccess(res, interviews, 200);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getInterview(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const parsedInterviewId = interviewIdSchema.safeParse(
+      req.params.interviewId,
+    );
+
+    if (!parsedInterviewId.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid interview id.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedInterviewId.error),
+      );
+    }
+
+    const interview = await findInterviewByIdAndUserId(
+      req.user!.userId,
+      parsedInterviewId.data,
+    );
+
+    if (!interview) {
+      return sendError(res, 404, "Interview not found.", "INTERVIEW_NOT_FOUND");
+    }
+
+    return sendSuccess(res, interview, 200);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function updateInterview(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const parsedInterviewId = interviewIdSchema.safeParse(
+      req.params.interviewId,
+    );
+
+    if (!parsedInterviewId.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid interview id.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedInterviewId.error),
+      );
+    }
+    const parsedInterview = updateInterviewSchema.safeParse(req.body);
+    if (!parsedInterview.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid data.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedInterview.error),
+      );
+    }
+    const interviewData = await updateInterviewData(
+      req.user!.userId,
+      parsedInterviewId.data,
+      parsedInterview.data,
+    );
+    if (interviewData === undefined) {
+      return sendError(res, 404, "Interview not found.", "INTERVIEW_NOT_FOUND");
+    }
+
+    return sendSuccess(
+      res,
+      interviewData,
+      200,
+      "Interview updated successfully.",
+    );
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function deleteInterview(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const parsedInterviewId = interviewIdSchema.safeParse(
+      req.params.interviewId,
+    );
+
+    if (!parsedInterviewId.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid interview id.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedInterviewId.error),
+      );
+    }
+
+    const deletedInterview = await deleteInterviewData(
+      req.user!.userId,
+      parsedInterviewId.data,
+    );
+
+    if (deletedInterview === undefined) {
+      return sendError(res, 404, "Interview not found.", "INTERVIEW_NOT_FOUND");
+    }
+
+    return sendSuccess(
+      res,
+      deletedInterview,
+      200,
+      "Interview deleted successfully.",
+    );
   } catch (error) {
     return next(error);
   }

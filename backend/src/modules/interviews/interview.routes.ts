@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { createInterview, getInterviews } from "./interview.controller";
+import {
+  createInterview,
+  deleteInterview,
+  getInterview,
+  getInterviews,
+  updateInterview,
+} from "./interview.controller";
 import { authMiddleware } from "../../middlewares/auth";
 
 const router = Router();
@@ -13,3 +19,8 @@ router.get(
   authMiddleware,
   getInterviews,
 );
+router.get("/interviews/:interviewId", authMiddleware, getInterview);
+router.patch("/interviews/:interviewId", authMiddleware, updateInterview);
+router.delete("/interviews/:interviewId", authMiddleware, deleteInterview);
+
+export default router;
