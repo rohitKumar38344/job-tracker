@@ -50,4 +50,39 @@ export const applicationFilterSchema = z
 export type ApplicationFilters = z.infer<typeof applicationFilterSchema>;
 
 export const applicationIdSchema = z.coerce.number().int().positive();
-export type ApplicationId = z.infer<typeof applicationIdSchema>
+export type ApplicationId = z.infer<typeof applicationIdSchema>;
+
+export const applicationStatusSchema = z.enum([
+  "APPLIED",
+  "SCREENING",
+  "INTERVIEW",
+  "OFFER",
+  "REJECTED",
+  "WITHDRAWN",
+]);
+
+export type ApplicationStatus = z.infer<
+  typeof applicationStatusSchema
+>;
+
+export const updateApplicationSchema = z
+  .object({
+    applicationDate: z.coerce.date().optional(),
+    resumeName: z.string().trim().optional(),
+    coverLetterUsed: z.boolean().optional(),
+    referralSource: z.string().trim().optional(),
+    notes: z.string().trim().optional(),
+    currentStatus: applicationStatusSchema.optional(),
+  })
+  .strict()
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    "At least one field must be provided for update.",
+  );
+
+export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
+
+export type UpdateApplicationWithStatusInput =
+  UpdateApplicationInput & {
+    currentStatus: ApplicationStatus;
+  };

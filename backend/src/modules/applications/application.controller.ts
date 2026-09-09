@@ -3,9 +3,14 @@ import {
   applicationFilterSchema,
   createApplicationSchema,
   applicationIdSchema,
+  updateApplicationSchema,
 } from "./application.validations";
-import { addApplicationService, getApplicationByIdService } from "./application.service";
-import { findApplicationsByUserId, findApplicationByIdAndUserId } from "./application.repository";
+import {
+  addApplicationService,
+  getApplicationByIdService,
+  updateApplicationService,
+} from "./application.service";
+import { findApplicationsByUserId } from "./application.repository";
 import formatZodError from "../../utils/validation";
 import { sendError, sendSuccess } from "../../utils/response";
 
@@ -102,6 +107,60 @@ export async function getApplicationById(
       );
     }
     return sendSuccess(res, application, 200);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function updateApplicationById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const parsedApplicationId = applicationIdSchema.safeParse(
+      req.params.applicationId,
+    );
+    if (!parsedApplicationId.success) {
+      return sendError(
+        res,
+        400,
+        "Validation failed.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedApplicationId.error),
+      );
+    }
+
+    const parsedApplication = updateApplicationSchema.safeParse(req.body);
+    if (!parsedApplication.success) {
+      return sendError(
+        res,
+        400,
+        "Validation failed.",
+        "VALIDATION_ERROR",
+        formatZodError(parsedApplication.error),
+      );
+    }
+
+    const updatedApplication = await updateApplicationService(
+      req.user!.userId,
+      parsedApplicationId.data,
+      parsedApplication.data,
+    );
+    if (updatedApplication === undefined) {
+      return sendError(
+        res,
+        404,
+        "Application not found.",
+        "APPLICATION_NOT_FOUND",
+      );
+    }
+    return sendSuccess(
+      res,
+      updatedApplication,
+      200,
+      "Application updated successfully.",
+    );
   } catch (error) {
     return next(error);
   }

@@ -5,8 +5,14 @@ import {
   findApplicationByIdAndUserId,
   findApplicationHistory,
   insertApplication,
+  updateApplicationData,
+  updateApplicationWithHistory,
 } from "./application.repository";
-import { CreateApplicationInput } from "./application.validations";
+import {
+  CreateApplicationInput,
+  UpdateApplicationInput,
+  UpdateApplicationWithStatusInput,
+} from "./application.validations";
 
 export async function addApplicationService(
   userId: number,
@@ -37,10 +43,7 @@ export async function getApplicationByIdService(
   userId: number,
   applicationId: number,
 ) {
-  const application = await findApplicationByIdAndUserId(
-    userId,
-    applicationId,
-  );
+  const application = await findApplicationByIdAndUserId(userId, applicationId);
   if (!application) {
     return undefined;
   }
@@ -50,4 +53,39 @@ export async function getApplicationByIdService(
     ...application,
     history: applicationHistory,
   };
+}
+
+export async function updateApplicationService(
+  userId: number,
+  applicationId: number,
+  data: UpdateApplicationInput,
+) {
+  const existingApplication = await findApplicationByIdAndUserId(
+    userId,
+    applicationId,
+  );
+
+  if (!existingApplication) {
+    return undefined;
+  }
+
+  if (!hasCurrentStatus(data)) {
+    return updateApplicationData(applicationId, data);
+  }
+
+  if (existingApplication.current_status === data.currentStatus) {
+    throw new AppError(
+      `Application is already in ${data.currentStatus} status.`,
+      409,
+      "STATUS_ALREADY_SET",
+    );
+  }
+
+  return updateApplicationWithHistory(applicationId, data);
+}
+
+function hasCurrentStatus(
+  data: UpdateApplicationInput,
+): data is UpdateApplicationWithStatusInput {
+  return data.currentStatus !== undefined;
 }

@@ -2,6 +2,8 @@ import { pool } from "../../db";
 import {
   ApplicationFilters,
   CreateApplicationInput,
+  UpdateApplicationInput,
+  UpdateApplicationWithStatusInput,
 } from "./application.validations";
 
 export async function insertApplication(data: CreateApplicationInput) {
@@ -170,4 +172,108 @@ export async function findApplicationHistory(applicationId: number) {
     [applicationId],
   );
   return result.rows;
+}
+
+export async function updateApplicationData(
+  applicationId: number,
+  data: UpdateApplicationInput,
+) {
+  const { fields, values } = buildUpdateFields(data);
+
+  const result = await pool.query(
+    `
+      UPDATE applications
+      SET ${fields.join(", ")}, updated_at = NOW()
+      WHERE application_id = $${values.length + 1}
+      RETURNING
+        application_id,
+        job_id,
+        application_date,
+        current_status,
+        resume_name,
+        cover_letter_used,
+        referral_source,
+        notes,
+        created_at,
+        updated_at;
+    `,
+    [...values, applicationId],
+  );
+
+  return result.rows[0];
+}
+
+export async function updateApplicationWithHistory(
+  applicationId: number,
+  data: UpdateApplicationWithStatusInput,
+) {
+  const { fields, values } = buildUpdateFields(data);
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      `
+      UPDATE applications
+      SET ${fields.join(", ")}, updated_at = NOW()
+      WHERE application_id = $${values.length + 1}
+      RETURNING
+        application_id,
+        job_id,
+        application_date,
+        current_status,
+        resume_name,
+        cover_letter_used,
+        referral_source,
+        notes,
+        created_at,
+        updated_at;
+    `,
+      [...values, applicationId],
+    );
+
+    await client.query(
+      `
+      INSERT INTO application_history (
+        application_id,
+        status,
+        changed_at
+      ) VALUES ($1, $2, NOW());
+    `,
+      [applicationId, data.currentStatus],
+    );
+
+    await client.query("COMMIT");
+
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function buildUpdateFields(data: UpdateApplicationInput) {
+  const updateColMap = {
+    applicationDate: "application_date",
+    resumeName: "resume_name",
+    coverLetterUsed: "cover_letter_used",
+    referralSource: "referral_source",
+    notes: "notes",
+    currentStatus: "current_status",
+  } as const;
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    const col = key as keyof typeof updateColMap;
+    if (!col) {
+      throw new Error(`Unsupported update field: ${key}`);
+    }
+
+    fields.push(`${updateColMap[col]} = $${values.length + 1}`);
+    values.push(value);
+  }
+  return { fields, values };
 }
