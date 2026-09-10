@@ -1,7 +1,18 @@
 import argon2 from "argon2";
-import { findUserByEmail, insertUser } from "./auth.repository";
+import {
+  createRefreshToken,
+  findRefreshTokenByHash,
+  findUserByEmail,
+  insertUser,
+  revokeRefreshTokenByHash,
+} from "./auth.repository";
 import { AppError } from "../../errors/AppError";
-import { singAccessToken } from "../../utils/jwt";
+import { signAccessToken } from "../../utils/jwt";
+import {
+  generateRefreshToken,
+  hashRefreshToken,
+} from "../../utils/refresh-token";
+import { sendError } from "../../utils/response";
 
 export async function registerUser(data: {
   name: string;
@@ -11,7 +22,11 @@ export async function registerUser(data: {
   const existingUser = await findUserByEmail(data.email);
 
   if (existingUser) {
-    throw new AppError("An account with this email already exists.", 409, "ACCOUNT_ALREADY_EXISTS");
+    throw new AppError(
+      "An account with this email already exists.",
+      409,
+      "ACCOUNT_ALREADY_EXISTS",
+    );
   }
 
   const passwordHash = await argon2.hash(data.password);
@@ -31,16 +46,20 @@ export async function registerUser(data: {
 
 export async function loginUser(data: { email: string; password: string }) {
   const user = await findUserByEmail(data.email);
-  if (!user) throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
+  if (!user)
+    throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
 
   const passwordMatches = await argon2.verify(
     user.password_hash,
     data.password,
   );
   if (!passwordMatches) {
-    throw new AppError("Invalid email or password", 401, 'INVALID_CREDENTIALS');
+    throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
   }
-  const accessToken = singAccessToken(user.user_id);
+
+  const accessToken = signAccessToken(user.user_id);
+  const { token, tokenHash } = generateRefreshToken();
+  await createRefreshToken(user.user_id, tokenHash);
   return {
     user: {
       userId: user.user_id,
@@ -48,5 +67,40 @@ export async function loginUser(data: { email: string; password: string }) {
       email: user.email,
     },
     accessToken,
+    refreshToken: token,
   };
+}
+
+export async function refreshAccessToken(refreshToken: string) {
+  const tokenHash = hashRefreshToken(refreshToken);
+  const storedToken = await findRefreshTokenByHash(tokenHash);
+
+  if (!storedToken) {
+    throw new AppError("Invalid refresh token", 401, "INVALID_REFRESH_TOKEN");
+  }
+  if (storedToken.revoked_at !== null) {
+    throw new AppError(
+      "Refresh token has been revoked.",
+      401,
+      "REFRESH_TOKEN_REVOKED",
+    );
+  }
+
+  if (storedToken.expires_at < new Date()) {
+    throw new AppError(
+      "Refresh token has expired.",
+      401,
+      "REFRESH_TOKEN_EXPIRED",
+    );
+  }
+  const accessToken = signAccessToken(Number(storedToken.user_id));
+  return {
+    accessToken,
+  };
+}
+
+export async function logoutUser(refreshToken: string) {
+  const hashedToken = hashRefreshToken(refreshToken);
+
+  return revokeRefreshTokenByHash(hashedToken);
 }

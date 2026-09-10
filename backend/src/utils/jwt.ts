@@ -7,19 +7,19 @@ const accessTokenPayloadSchema = z.object({
 });
 export type AccessTokenPayload = z.infer<typeof accessTokenPayloadSchema>;
 
-export function singAccessToken(userId: number) {
+export function signAccessToken(userId: number) {
   return jwt.sign({ userId }, env.JWT_SECRET, {
     expiresIn: "30m",
     subject: String(userId),
   });
 }
 
-export function verifyAccessToken(token: string){
-  const decoded = jwt.verify(token, env.JWT_SECRET)
+export function verifyAccessToken(token: string) {
+  const decoded = jwt.verify(token, env.JWT_SECRET);
 
-  if(typeof decoded === 'string'){
-    throw new Error("Invalid JWT payload")
+  if (typeof decoded === "string") {
+    throw new Error("Invalid JWT payload");
   }
 
-  return accessTokenPayloadSchema.parse(decoded)
+  return accessTokenPayloadSchema.parse(decoded);
 }
