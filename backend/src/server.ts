@@ -20,7 +20,7 @@ app.use(
     origin: env.CORS_ORIGIN,
   }),
 );
-app.use(express.json({limit: '10kb'}));
+app.use(express.json({ limit: "10kb" }));
 
 app.get("/health", async (req: Request, res: Response) => {
   try {
@@ -46,6 +46,29 @@ app.use("/api", interviewRouter);
 app.use("/api/dashboard", dashboardRouter);
 
 app.use(errorHandler);
-app.listen(env.PORT, () => {
+
+const server = app.listen(env.PORT, () => {
   console.log(`Server is running on http://localhost:${env.PORT}`);
 });
+
+let isShuttingDown = false;
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+
+  isShuttingDown = true;
+  console.log(`${signal} received. Shutting down gracefully...`);
+
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log("Database pool closed");
+      process.exit(0);
+    } catch (error) {
+      console.error(`Error during shutdown:`, error);
+      process.exit(1);
+    }
+  });
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
