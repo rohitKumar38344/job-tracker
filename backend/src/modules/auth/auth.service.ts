@@ -1,10 +1,10 @@
 import argon2 from "argon2";
 import {
   createRefreshToken,
-  findRefreshTokenByHash,
   findUserByEmail,
   insertUser,
   revokeRefreshTokenByHash,
+  rotateRefreshToken,
 } from "./auth.repository";
 import { AppError } from "../../errors/AppError";
 import { signAccessToken } from "../../utils/jwt";
@@ -12,7 +12,6 @@ import {
   generateRefreshToken,
   hashRefreshToken,
 } from "../../utils/refresh-token";
-import { sendError } from "../../utils/response";
 
 export async function registerUser(data: {
   name: string;
@@ -73,29 +72,15 @@ export async function loginUser(data: { email: string; password: string }) {
 
 export async function refreshAccessToken(refreshToken: string) {
   const tokenHash = hashRefreshToken(refreshToken);
-  const storedToken = await findRefreshTokenByHash(tokenHash);
 
-  if (!storedToken) {
-    throw new AppError("Invalid refresh token", 401, "INVALID_REFRESH_TOKEN");
-  }
-  if (storedToken.revoked_at !== null) {
-    throw new AppError(
-      "Refresh token has been revoked.",
-      401,
-      "REFRESH_TOKEN_REVOKED",
-    );
-  }
+  const { token: newRefreshToken, tokenHash: newTokenHash } =
+    generateRefreshToken();
 
-  if (storedToken.expires_at < new Date()) {
-    throw new AppError(
-      "Refresh token has expired.",
-      401,
-      "REFRESH_TOKEN_EXPIRED",
-    );
-  }
-  const accessToken = signAccessToken(Number(storedToken.user_id));
+  const rotatedToken = await rotateRefreshToken(tokenHash, newTokenHash);
+  const accessToken = signAccessToken(Number(rotatedToken.user_id));
   return {
     accessToken,
+    refreshToken: newRefreshToken,
   };
 }
 

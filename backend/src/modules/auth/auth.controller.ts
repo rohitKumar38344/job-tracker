@@ -75,11 +75,11 @@ export async function refreshTokenController(
       );
     }
 
-    // call service
+
     const newAccessToken = await refreshAccessToken(
       parsedToken.data.refreshToken,
     );
-    // send success
+
     return sendSuccess(res, newAccessToken, 200);
   } catch (error) {
     return next(error);
