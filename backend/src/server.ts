@@ -6,6 +6,7 @@ import jobRouter from "./modules/jobs/job.routes";
 import authRouter from "./modules/auth/auth.routes";
 import applicationRouter from "./modules/applications/application.routes"
 import interviewRouter from "./modules/interviews/interview.routes"
+import dashboardRouter from "./modules/dashboard/dashboard.routes"
 import { errorHandler } from "./middlewares/error-handler";
 import { env } from "./config/env";
 
@@ -33,6 +34,7 @@ app.use("/api/companies", companyRouter);
 app.use("/api/jobs", jobRouter);
 app.use("/api/applications", applicationRouter)
 app.use("/api", interviewRouter)
+app.use('/api/dashboard', dashboardRouter)
 
 app.use(errorHandler);
 app.listen(env.PORT, () => {
