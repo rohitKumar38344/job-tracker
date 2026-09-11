@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import {
   registerSchema,
   loginSchema,
-  refreshTokenSchema,
 } from "./auth.validation";
 import {
   registerUser,
@@ -14,6 +13,7 @@ import { sendError, sendSuccess } from "../../utils/response";
 import formatZodError from "../../utils/validation";
 import { refreshTokenCookieOptions } from "../../config/auth-cookie";
 import { AppError } from "../../errors/AppError";
+import { findUserById } from "./auth.repository";
 
 export async function register(
   req: Request,
@@ -106,6 +106,27 @@ export async function logoutController(
     }
     res.clearCookie("refreshToken", refreshTokenCookieOptions);
     return sendSuccess(res, null, 200, "Logged out successfully.");
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getMe(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await findUserById(req.user!.userId);
+
+    if (!user) {
+      throw new AppError("User not found", 404, "USER_NOT_FOUND");
+    }
+    return sendSuccess(
+      res,
+      {
+        userId: user.user_id,
+        name: user.name,
+        email: user.email,
+      },
+      200,
+    );
   } catch (error) {
     return next(error);
   }
