@@ -12,6 +12,8 @@ import {
 } from "./auth.service";
 import { sendError, sendSuccess } from "../../utils/response";
 import formatZodError from "../../utils/validation";
+import { refreshTokenCookieOptions } from "../../config/auth-cookie";
+import { AppError } from "../../errors/AppError";
 
 export async function register(
   req: Request,
@@ -52,7 +54,16 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
   try {
     const resultData = await loginUser(result.data);
-    return sendSuccess(res, resultData, 200);
+    res.cookie(
+      "refreshToken",
+      resultData.refreshToken,
+      refreshTokenCookieOptions,
+    );
+    return sendSuccess(
+      res,
+      { user: resultData.user, accessToken: resultData.accessToken },
+      200,
+    );
   } catch (error) {
     return next(error);
   }
@@ -64,23 +75,20 @@ export async function refreshTokenController(
   next: NextFunction,
 ) {
   try {
-    const parsedToken = refreshTokenSchema.safeParse(req.body);
-    if (!parsedToken.success) {
-      return sendError(
-        res,
-        400,
-        "Validation Failed.",
-        "VALIDATION_ERROR",
-        formatZodError(parsedToken.error),
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      throw new AppError(
+        "Refresh token is required.",
+        401,
+        "REFRESH_TOKEN_REQUIRED",
       );
     }
 
+    const result = await refreshAccessToken(refreshToken);
 
-    const newAccessToken = await refreshAccessToken(
-      parsedToken.data.refreshToken,
-    );
+    res.cookie("refreshToken", result.refreshToken, refreshTokenCookieOptions);
 
-    return sendSuccess(res, newAccessToken, 200);
+    return sendSuccess(res, { accessToken: result.accessToken }, 200);
   } catch (error) {
     return next(error);
   }
@@ -92,18 +100,11 @@ export async function logoutController(
   next: NextFunction,
 ) {
   try {
-    const parsedToken = refreshTokenSchema.safeParse(req.body);
-    if (!parsedToken.success) {
-      return sendError(
-        res,
-        400,
-        "Validation Failed.",
-        "VALIDATION_ERROR",
-        formatZodError(parsedToken.error),
-      );
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+      await logoutUser(refreshToken);
     }
-    await logoutUser(parsedToken.data.refreshToken);
-
+    res.clearCookie("refreshToken", refreshTokenCookieOptions);
     return sendSuccess(res, null, 200, "Logged out successfully.");
   } catch (error) {
     return next(error);
