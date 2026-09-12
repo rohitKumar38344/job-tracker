@@ -5,10 +5,11 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
-} from "lucide-react";
-import { NavLink } from "react-router";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+} from "lucide-react"
+import { NavLink, useNavigate } from "react-router"
+import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/features/auth/context/auth-context"
 
 const navigationItems = [
   {
@@ -36,9 +37,20 @@ const navigationItems = [
     path: "/interviews",
     icon: CalendarDays,
   },
-];
+]
 
 export const Sidebar = () => {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    try {
+      await logout()
+      navigate("/login", { replace: true })
+    } catch {
+      navigate("/login", { replace: true })
+    }
+  }
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r bg-card">
       {/* Brand */}
@@ -52,12 +64,12 @@ export const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4">
-        <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <p className="mb-2 px-3 text-xs font-medium tracking-wider text-muted-foreground uppercase">
           Main
         </p>
 
         {navigationItems.map((item) => {
-          const Icon = item.icon;
+          const Icon = item.icon
 
           return (
             <NavLink
@@ -74,7 +86,7 @@ export const Sidebar = () => {
               <Icon className="size-5 shrink-0" />
               <span>{item.label}</span>
             </NavLink>
-          );
+          )
         })}
       </nav>
 
@@ -83,11 +95,12 @@ export const Sidebar = () => {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 px-3 text-muted-foreground hover:text-foreground"
+          onClick={handleLogout}
         >
           <LogOut className="size-5" />
           <span>Logout</span>
         </Button>
       </div>
     </aside>
-  );
-};
+  )
+}

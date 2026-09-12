@@ -9,7 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useLocation } from "react-router"
+import { useLocation, useNavigate } from "react-router"
+import { useAuth } from "@/features/auth/context/auth-context"
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -21,14 +22,23 @@ const pageTitles: Record<string, string> = {
 
 export const Topbar = () => {
   const { pathname } = useLocation()
-  const pageTitle = pageTitles[pathname] ?? "Job Tracker";
+  const pageTitle = pageTitles[pathname] ?? "Job Tracker"
+  const { logout, user } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    try {
+      await logout()
+      navigate("/login", { replace: true })
+    } catch {
+      navigate("/login", { replace: true })
+    }
+  }
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b px-6">
       {/* Page title */}
       <div>
-        <h1 className="text-lg font-semibold capitalize">
-          {pageTitle}
-        </h1>
+        <h1 className="text-lg font-semibold capitalize">{pageTitle}</h1>
       </div>
 
       {/* Right side */}
@@ -46,7 +56,7 @@ export const Topbar = () => {
                 </Avatar>
 
                 <span className="hidden text-sm font-medium sm:inline">
-                  Rohit
+                  {user?.name}
                 </span>
               </Button>
             }
@@ -59,7 +69,7 @@ export const Topbar = () => {
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
