@@ -39,9 +39,7 @@ export async function createCompany(
       notes: result.data.notes,
     });
 
-    return res.status(201).json({
-      data: company,
-    });
+    return sendSuccess(res, company, 201, "Company created successfully.");
   } catch (error) {
     return next(error);
   }
@@ -54,7 +52,7 @@ export async function getCompanies(
 ) {
   try {
     const companies = await findCompaniesByUserId(req.user!.userId);
-    return res.status(200).json({ data: companies });
+    return sendSuccess(res, companies, 200);
   } catch (error) {
     return next(error);
   }
@@ -65,16 +63,26 @@ export async function getCompany(
   res: Response,
   next: NextFunction,
 ) {
-  // handle companyId = Number(abc) = NaN case
   try {
+    const companyIdResult = companyIdSchema.safeParse(req.params.companyId);
+
+    if (!companyIdResult.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid company id.",
+        "VALIDATION_ERROR",
+        formatZodError(companyIdResult.error),
+      );
+    }
     const company = await findCompanyByIdAndUserId(
-      Number(req.params.companyId),
+      companyIdResult.data,
       req.user!.userId,
     );
     if (!company) {
       return res.status(404).json({ message: "Company not found." });
     }
-    return res.status(200).json({ data: company });
+    return sendSuccess(res, company, 200);
   } catch (error) {
     return next(error);
   }
@@ -87,12 +95,24 @@ export async function updateCompany(
 ) {
   const companyIdResult = companyIdSchema.safeParse(req.params.companyId);
   if (!companyIdResult.success) {
-    return sendError(res, 400, "Validation failed.", "VALIDATION_ERROR", formatZodError(companyIdResult.error))
+    return sendError(
+      res,
+      400,
+      "Validation failed.",
+      "VALIDATION_ERROR",
+      formatZodError(companyIdResult.error),
+    );
   }
   const result = updateCompanySchema.safeParse(req.body);
 
   if (!result.success) {
-    return sendError(res, 400, "Validation Failed.", "VALIDATION_ERROR", formatZodError(result.error))
+    return sendError(
+      res,
+      400,
+      "Validation Failed.",
+      "VALIDATION_ERROR",
+      formatZodError(result.error),
+    );
   }
   try {
     const updatedCompany = await updateCompanyData(
@@ -102,9 +122,9 @@ export async function updateCompany(
     );
 
     if (!updatedCompany) {
-      return sendSuccess(res, updateCompany, 404, "Company not found.")
+      return sendSuccess(res, updateCompany, 404, "Company not found.");
     }
-    return sendSuccess(res, updatedCompany, 200)
+    return sendSuccess(res, updatedCompany, 200);
   } catch (error) {
     return next(error);
   }
@@ -118,7 +138,13 @@ export async function deleteCompany(
   const parsedCompanyId = companyIdSchema.safeParse(req.params.companyId);
 
   if (!parsedCompanyId.success) {
-    return sendError(res, 400, "Invalid company id.", "VALIDATION_ERROR", formatZodError(parsedCompanyId.error))
+    return sendError(
+      res,
+      400,
+      "Invalid company id.",
+      "VALIDATION_ERROR",
+      formatZodError(parsedCompanyId.error),
+    );
   }
 
   try {
@@ -128,9 +154,9 @@ export async function deleteCompany(
     );
 
     if (!result) {
-      return sendSuccess(res, result, 404, "Company not found.")
+      return sendSuccess(res, result, 404, "Company not found.");
     }
-    return sendSuccess(res, result, 200, "Company deleted successfully.")
+    return sendSuccess(res, result, 200, "Company deleted successfully.");
   } catch (error) {
     return next(error);
   }

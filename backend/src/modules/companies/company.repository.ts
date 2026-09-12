@@ -63,16 +63,21 @@ export async function insertCompany(data: createCompanyData) {
 
 export async function findCompaniesByUserId(userId: number) {
   const result = await pool.query(
-    `SELECT 
-    company_id,
-    company_name,
-    industry,
-    location,
-    company_size,
-    company_url,
-    linkedin_url,
-    created_at,
-    updated_at FROM companies WHERE user_id = $1 ORDER BY created_at DESC
+    `
+    SELECT 
+      company_id,
+      company_name,
+      industry,
+      location,
+      company_size,
+      company_url,
+      linkedin_url,
+      notes,
+      created_at,
+      updated_at
+    FROM companies
+    WHERE user_id = $1
+    ORDER BY created_at DESC
     `,
     [userId],
   );
@@ -137,29 +142,30 @@ export async function updateCompanyData(
   UPDATE companies
   SET ${fields.join(", ")}
   WHERE user_id = $${userIdPlaceholder}
-  AND company_id = $${companyIdPlaceholder}
-  job_id
-  company_id
-  company_name
-  title
-  description
-  location
-  employment_type
-  work_arrangement
-  salary_min
-  salary_max
-  job_url
-  source
-  discovered_date
-  closing_at
-  notes
-  created_at
-  updated_at
+    AND company_id = $${companyIdPlaceholder}
+  RETURNING
+    job_id
+    company_id
+    company_name
+    title
+    description
+    location
+    employment_type
+    work_arrangement
+    salary_min
+    salary_max
+    job_url
+    source
+    discovered_date
+    closing_at
+    notes
+    created_at
+    updated_at
 `,
       [...values, userId, companyId],
     );
 
-    return result.rows[0];
+    return result.rows[0] ?? null;
   } catch (error) {
     if (
       isUniqueViolation(error) &&
