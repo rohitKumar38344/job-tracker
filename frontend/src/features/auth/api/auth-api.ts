@@ -18,29 +18,29 @@ export interface LoginInput {
 }
 
 export async function register(input: RegisterInput) {
-  return apiClient<AuthUser>("/auth/register", {
+  return apiClient<AuthUser>("auth/register", {
     method: "POST",
     body: JSON.stringify(input),
   })
 }
 
 export async function login(input: LoginInput) {
-  return apiClient<{ user: AuthUser; accessToken: string }>("/auth/login", {
+  return apiClient<{ user: AuthUser; accessToken: string }>("auth/login", {
     method: "POST",
     body: JSON.stringify(input),
   })
 }
 
 export async function getMe() {
-  return apiClient<AuthUser>("/auth/me")
+  return apiClient<AuthUser>("auth/me")
 }
 
 export async function refresh() {
   return apiClient<{
     accessToken: string
-  }>("/auth/refresh", { method: "POST" })
+  }>("auth/refresh", { method: "POST" })
 }
 
 export async function logout() {
-  return apiClient<null>("/auth/logout", { method: "POST" })
+  return apiClient<null>("auth/logout", { method: "POST" })
 }

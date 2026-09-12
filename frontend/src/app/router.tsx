@@ -5,37 +5,43 @@ import ApplicationsPage from "@/pages/ApplicationsPage"
 import InterviewsPage from "@/pages/InterviewsPage"
 import { createBrowserRouter } from "react-router"
 import JobsPage from "@/pages/JobsPage"
+import LoginPage from "@/pages/LoginPage"
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute"
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <DashboardLayout />,
+    element: <ProtectedRoute />,
     children: [
       {
-        path: "dashboard",
-        element: <DashboardPage />,
-      },
-      {
-        path: "companies",
-        element: <CompaniesPage />,
-      },
-      {
-        path: "jobs",
-        element: <JobsPage />,
-      },
-      {
-        path: "applications",
-        element: <ApplicationsPage />,
-      },
-      {
-        path: "interviews",
-        element: <InterviewsPage />,
+        element: <DashboardLayout />,
+        children: [
+          {
+            path: "dashboard",
+            element: <DashboardPage />,
+          },
+          {
+            path: "companies",
+            element: <CompaniesPage />,
+          },
+          {
+            path: "jobs",
+            element: <JobsPage />,
+          },
+          {
+            path: "applications",
+            element: <ApplicationsPage />,
+          },
+          {
+            path: "interviews",
+            element: <InterviewsPage />,
+          },
+        ],
       },
     ],
   },
   {
     path: "/login",
-    element: <h1>Login</h1>,
+    element: <LoginPage />,
   },
   {
     path: "/register",
