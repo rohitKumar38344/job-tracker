@@ -9,9 +9,9 @@ export const createCompanySchema = z.object({
 
   industry: z.string().trim().max(255, "Industry name is too long").optional(),
 
-  location: z.string().trim().optional(),
+  location: z.string().trim().max(150, "Location is too long").optional(),
 
-  companySize: z.number().int().positive().optional(),
+  companySize: z.number().int("Company size must be a whole number").positive("Company size must be greater than 0").optional(),
 
   companyUrl: z.url("Invalid company URL").optional(),
 
@@ -25,18 +25,18 @@ export const updateCompanySchema = z.object({
     .string()
     .trim()
     .min(1, "Company name is required")
-    .max(150, "Company name is too long")
+    .max(255, "Company name is too long")
     .optional(),
 
-  industry: z.string().trim().max(100, "Industry name is too long").optional(),
+  industry: z.string().trim().max(255, "Industry name is too long").optional(),
 
   location: z.string().trim().max(150, "Location is too long").optional(),
 
-  companySize: z.number().int().positive().optional(),
+  companySize: z.number().int("Company size must be a whole number").positive("Company size must be greater than 0").optional(),
 
   companyUrl: z.url("Invalid company URL").optional(),
 
-  linkedinUrl: z.url("Invalid linkedin URL").optional(),
+  linkedinUrl: z.url("Invalid LinkedIn URL").optional(),
 
   notes: z.string().trim().optional(),
 }).refine(
