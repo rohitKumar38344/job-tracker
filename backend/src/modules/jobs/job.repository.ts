@@ -93,11 +93,14 @@ export async function findJobByUserIdAndJobId(userId: number, jobId: number) {
     j.work_arrangement,
     j.salary_min,
     j.salary_max,
+    j.salary_currency,
     j.job_url,
     j.source,
     j.discovered_date,
     j.closing_at,
-    j.notes
+    j.notes,
+    j.created_at,
+    j.updated_at
     FROM companies AS c
     INNER JOIN jobs AS j
       ON c.company_id = j.company_id
@@ -134,11 +137,15 @@ export async function filterJobsByUserId(userId: number, data: JobFilters) {
     values.push(data.workArrangement);
   }
   if (data.salaryMin !== undefined) {
-    whereClause.push(`j.salary_min >= $${values.length + 1}`);
+    whereClause.push(
+      `(j.salary_max IS NULL OR j.salary_max >= $${values.length + 1})`,
+    );
     values.push(data.salaryMin);
   }
   if (data.salaryMax !== undefined) {
-    whereClause.push(`j.salary_max <= $${values.length + 1}`);
+    whereClause.push(
+      `(j.salary_min IS NULL OR j.salary_min <= $${values.length + 1})`,
+    );
     values.push(data.salaryMax);
   }
   // console.log('whereclause',whereClause, values)
@@ -168,11 +175,14 @@ export async function filterJobsByUserId(userId: number, data: JobFilters) {
     j.work_arrangement,
     j.salary_min,
     j.salary_max,
+    j.salary_currency,
     j.job_url,
     j.source,
     j.discovered_date,
     j.closing_at,
-    j.notes
+    j.notes,
+    j.created_at,
+    j.updated_at
     FROM companies AS c
     INNER JOIN jobs AS j
       ON c.company_id = j.company_id
@@ -263,6 +273,7 @@ export async function updateJobData(
       j.work_arrangement,
       j.salary_min,
       j.salary_max,
+      j.salary_currency,
       j.job_url,
       j.source,
       j.discovered_date,
@@ -274,11 +285,12 @@ export async function updateJobData(
     [...values, jobId, userId],
   );
 
-  return result.rows[0];  
+  return result.rows[0];
 }
 
-export async function deleteJobData(userId: number, jobId: number){
-  const result = await pool.query(`
+export async function deleteJobData(userId: number, jobId: number) {
+  const result = await pool.query(
+    `
     DELETE FROM jobs AS j
     USING companies AS c
     WHERE c.company_id = j.company_id
@@ -288,7 +300,9 @@ export async function deleteJobData(userId: number, jobId: number){
      j.job_id,
      j.title,
      c.company_id
-    `, [userId, jobId]);
+    `,
+    [userId, jobId],
+  );
 
-  return result.rows[0]
+  return result.rows[0];
 }

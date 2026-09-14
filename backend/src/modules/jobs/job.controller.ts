@@ -35,7 +35,7 @@ export async function createJob(
     const job = await insertJob(req.user!.userId, result.data);
 
     if (!job) {
-      return sendSuccess(res, job, 404, "Company not found");
+      return sendError(res, 404, "Company not found.", "COMPANY_NOT_FOUND");
     }
 
     return sendSuccess(res, job, 201);
@@ -48,19 +48,13 @@ export async function getJob(req: Request, res: Response, next: NextFunction) {
   const jobId = jobIdSchema.safeParse(req.params.jobId);
 
   if (!jobId.success) {
-    return sendError(
-      res,
-      400,
-      "Validated failed.",
-      "VALIDATION_ERROR",
-      formatZodError(jobId.error),
-    );
+    return sendError(res, 404, "Job not found.", "JOB_NOT_FOUND");
   }
   try {
     const job = await findJobByUserIdAndJobId(req.user!.userId, jobId.data);
 
     if (!job) {
-      return sendSuccess(res, job, 404, "Job not found.");
+      return sendSuccess(res, job, 404, "JOB_NOT_FOUND");
     }
     return sendSuccess(res, job, 200);
   } catch (error) {
@@ -89,9 +83,15 @@ export async function filterJobs(
       req.user!.userId,
       parsedFilters.data,
     );
-    return res
-      .status(200)
-      .json({ data: result.jobs, pagination: result.pagination });
+
+    return sendSuccess(
+      res,
+      {
+        jobs: result.jobs,
+        pagination: result.pagination,
+      },
+      200,
+    );
   } catch (error) {
     return next(error);
   }
@@ -159,7 +159,7 @@ export async function deleteJob(
   try {
     const deletedJob = await deleteJobData(req.user!.userId, parsedJobId.data);
     if (!deletedJob) {
-      return sendSuccess(res, deleteJob, 404, "Job not found.");
+      return sendError(res, 404, "Job not found.", "JOB_NOT_FOUND");
     }
     return res.status(200).json({
       message: "Job deleted successfully.",
