@@ -16,7 +16,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router"
+import { Link, useNavigate } from "react-router"
 
 function LoginPage() {
   const { login } = useAuth()
@@ -31,6 +31,7 @@ function LoginPage() {
   })
 
   async function onSubmit(data: LoginFormValues) {
+    setLoginError(null)
     try {
       await login(data)
       navigate("/dashboard")
@@ -42,7 +43,6 @@ function LoginPage() {
   }
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/0 px-4">
-      {loginError && <p className="text-sm text-destructive">{loginError}</p>}
       <Card className="w-full sm:max-w-md">
         <CardHeader>
           <CardTitle>Welcome back</CardTitle>
@@ -50,6 +50,11 @@ function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {loginError && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+                <p className="text-sm text-destructive">{loginError}</p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -66,7 +71,7 @@ function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="passsword">Password</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -83,6 +88,15 @@ function LoginPage() {
               {isSubmitting ? "Signing in..." : "Sign in"}
             </Button>
           </form>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Create an account
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useLocation, useNavigate } from "react-router"
 import { useAuth } from "@/features/auth/context/auth-context"
+import { getInitials } from "@/lib/get-initials"
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -52,7 +53,9 @@ export const Topbar = () => {
             render={
               <Button variant="ghost" className="flex items-center gap-2 px-2">
                 <Avatar className="size-8">
-                  <AvatarFallback>RK</AvatarFallback>
+                  <AvatarFallback>
+                    {user ? getInitials(user.name) : "?"}
+                  </AvatarFallback>
                 </Avatar>
 
                 <span className="hidden text-sm font-medium sm:inline">
