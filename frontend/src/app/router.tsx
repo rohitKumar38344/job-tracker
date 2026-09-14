@@ -3,7 +3,7 @@ import DashboardPage from "@/pages/DashboardPage"
 import CompaniesPage from "@/pages/CompaniesPage"
 import ApplicationsPage from "@/pages/ApplicationsPage"
 import InterviewsPage from "@/pages/InterviewsPage"
-import { createBrowserRouter } from "react-router"
+import { createBrowserRouter, Navigate } from "react-router"
 import JobsPage from "@/pages/JobsPage"
 import LoginPage from "@/pages/LoginPage"
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute"
@@ -16,6 +16,10 @@ export const router = createBrowserRouter([
       {
         element: <DashboardLayout />,
         children: [
+          {
+            path: "/",
+            element: <Navigate to="/dashboard" replace />,
+          },
           {
             path: "dashboard",
             element: <DashboardPage />,
