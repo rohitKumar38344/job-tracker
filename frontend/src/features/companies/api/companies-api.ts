@@ -102,8 +102,6 @@ export async function updateCompany(
   }
 }
 
-
-
 export async function deleteCompany(companyId: number) {
   const response = await apiClient<DeleteCompanyApiResponse>(
     `companies/${companyId}`,
@@ -115,7 +113,7 @@ export async function deleteCompany(companyId: number) {
     ...response,
     data: {
       companyId: response.data.company_id,
-      companyName: response.data.company_name
-    }
+      companyName: response.data.company_name,
+    },
   }
 }
