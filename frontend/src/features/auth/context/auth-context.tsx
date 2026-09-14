@@ -5,21 +5,25 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import type { AuthUser, LoginInput } from "../api/auth-api"
+
+import { getNewAccessToken } from "@/lib/api-client"
+
+import { clearAccessToken, setAccessToken } from "@/lib/auth-token"
+
 import {
   getMe,
   login as loginUser,
   logout as logoutUser,
-  refresh,
 } from "../api/auth-api"
-import { clearAccessToken, setAccessToken } from "@/lib/auth-token"
+
+import type { AuthUser, LoginInput } from "../api/auth-api"
 
 interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (loginInput: LoginInput) => Promise<void>
-  logout: () => void
+  login: (input: LoginInput) => Promise<void>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -27,6 +31,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 interface AuthProviderProps {
   children: ReactNode
 }
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -35,6 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function login(input: LoginInput) {
     const response = await loginUser(input)
+
     setAccessToken(response.data.accessToken)
     setUser(response.data.user)
   }
@@ -51,9 +57,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     async function initializeAuth() {
       try {
-        const refreshResponse = await refresh()
-        setAccessToken(refreshResponse.data.accessToken)
+        await getNewAccessToken()
+
         const meResponse = await getMe()
+
         setUser(meResponse.data)
       } catch {
         clearAccessToken()
@@ -62,14 +69,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     }
+
     void initializeAuth()
   }, [])
+
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
         isAuthenticated,
+        isLoading,
         login,
         logout,
       }}
@@ -85,5 +94,6 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used inside an AuthProvider")
   }
+
   return context
 }

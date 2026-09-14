@@ -1,4 +1,4 @@
-import type { ApiSuccessResponse } from "@/types/api"
+import type { ApiSuccessResponse } from "../types/api"
 import { clearAccessToken, getAccessToken, setAccessToken } from "./auth-token"
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -8,29 +8,33 @@ type ApiOptions = RequestInit & {
 }
 
 let refreshPromise: Promise<string> | null = null
-// automatic refresh
+
 async function refreshAccessToken(): Promise<string> {
-  const res = await fetch(`${API_URL}/auth/refresh`, {
+  const response = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     credentials: "include",
   })
-  const data = await res.json()
 
-  if (!res.ok) {
+  const data = await response.json()
+
+  if (!response.ok) {
     throw new Error(data.message ?? "Unable to refresh session.")
   }
 
   const accessToken = data.data.accessToken
+
   setAccessToken(accessToken)
+
   return accessToken
 }
 
-async function getNewAccessToken(): Promise<string> {
+export async function getNewAccessToken(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = refreshAccessToken().finally(() => {
       refreshPromise = null
     })
   }
+
   return refreshPromise
 }
 
@@ -42,21 +46,20 @@ export async function apiClient<T>(
 
   const accessToken = getAccessToken()
 
-  const response = await fetch(`${API_URL}/${endpoint}`, {
+  const url = `${API_URL}${
+    endpoint.startsWith("/") ? endpoint : `/${endpoint}`
+  }`
+
+  const response = await fetch(url, {
     ...requestOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(accessToken
-        ? {
-            Authorization: `Bearer ${accessToken}`,
-          }
-        : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...requestOptions.headers,
     },
     credentials: "include",
   })
 
-  // refresh block -> skipAuthRefresh (whether you want skip refresh or not)
   if (response.status === 401 && !skipAuthRefresh) {
     try {
       const newAccessToken = await getNewAccessToken()
@@ -74,10 +77,12 @@ export async function apiClient<T>(
       throw error
     }
   }
+
   const data = await response.json()
 
   if (!response.ok) {
     throw new Error(data.message ?? "Something went wrong.")
   }
+
   return data
 }

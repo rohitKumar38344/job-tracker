@@ -35,12 +35,8 @@ export async function getMe() {
   return apiClient<AuthUser>("auth/me")
 }
 
-export async function refresh() {
-  return apiClient<{
-    accessToken: string
-  }>("auth/refresh", { method: "POST", skipAuthRefresh: true })
-}
-
 export async function logout() {
-  return apiClient<null>("auth/logout", { method: "POST" })
+  return apiClient<null>("auth/logout", {
+    method: "POST",
+  })
 }
