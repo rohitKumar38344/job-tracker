@@ -12,7 +12,6 @@ import {
 } from "./application.service";
 import {
   deleteApplicationData,
-  findApplicationByIdAndUserId,
   findApplicationsByUserId,
 } from "./application.repository";
 import formatZodError from "../../utils/validation";

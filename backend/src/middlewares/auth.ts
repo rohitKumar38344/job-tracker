@@ -4,19 +4,27 @@ import { verifyAccessToken } from "../utils/jwt";
 
 export function authMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) {
   try {
     const authorization = req.headers.authorization;
 
     if (!authorization) {
-      throw new AppError("Authentication required", 401);
+      throw new AppError(
+        "Authentication required",
+        401,
+        "AUTHENTICATION_REQUIRED",
+      );
     }
 
     const [scheme, token] = authorization.split(" ");
     if (scheme !== "Bearer" || !token) {
-      throw new AppError("Invalid authorization header.", 401);
+      throw new AppError(
+        "Invalid authorization header.",
+        401,
+        "INVALID_AUTHORIZATION_HEADER",
+      );
     }
     const payload = verifyAccessToken(token);
 

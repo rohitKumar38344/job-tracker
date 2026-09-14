@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express, { Request, Response } from "express";
+import express from "express";
 import { pool } from "./db";
 import companyRouter from "./modules/companies/company.routes";
 import jobRouter from "./modules/jobs/job.routes";
@@ -22,10 +22,10 @@ app.use(
     credentials: true,
   }),
 );
-app.use(cookieParser())
+app.use(cookieParser());
 app.use(express.json({ limit: "10kb" }));
 
-app.get("/health", async (req: Request, res: Response) => {
+app.get("/health", async (_req, res) => {
   try {
     await pool.query("SELECT 1");
     res.status(200).json({
@@ -50,7 +50,7 @@ app.use("/api/dashboard", dashboardRouter);
 
 app.use(errorHandler);
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://localhost:${env.PORT}`);
 });
 

@@ -7,7 +7,7 @@ import {
 } from "jsonwebtoken";
 import { sendError } from "../utils/response";
 
-export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
+export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   console.error(error);
 
   if (error instanceof AppError) {

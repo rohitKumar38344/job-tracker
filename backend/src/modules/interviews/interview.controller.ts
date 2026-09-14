@@ -14,7 +14,6 @@ import {
   insertInterview,
   updateInterviewData,
 } from "./interview.repository";
-import { deleteApplicationData } from "../applications/application.repository";
 
 export async function createInterview(
   req: Request,
