@@ -11,7 +11,7 @@ interface CompanyCardProps {
 }
 
 export function CompanyCard({ company, onEdit, onDelete }: CompanyCardProps) {
-  console.log('company data inside card', company)
+  
   return (
     <Card className="group transition-shadow hover:shadow-md">
       <CardHeader className="flex flex-row items-start justify-between space-y-0">

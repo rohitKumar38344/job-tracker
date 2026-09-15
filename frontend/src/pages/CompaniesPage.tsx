@@ -71,11 +71,9 @@ function CompaniesPage() {
         </div>
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add company
-            </Button>
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add company
           </DialogTrigger>
 
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
