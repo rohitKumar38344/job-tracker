@@ -26,7 +26,7 @@ export async function insertUser(data: CreateUserData) {
 export async function findUserByEmail(email: string) {
   const result = await pool.query(
     `
-    SELECT user_id, email, password_hash, created_at, updated_at FROM users WHERE email = $1`,
+    SELECT user_id, name, email, password_hash, created_at, updated_at FROM users WHERE email = $1`,
     [email],
   );
   return result.rows[0] ?? null;
